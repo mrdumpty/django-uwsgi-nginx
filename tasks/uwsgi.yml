@@ -1,0 +1,28 @@
+---
+# code: language=ansible
+
+- name: Install uwsgi
+  ansible.builtin.apt:
+    pkg:
+      - uwsgi
+      - uwsgi-plugin-python3
+    update_cache: true
+
+- name: Running and enabled uwsgi service
+  ansible.builtin.service:
+    name: uwsgi
+    state: started
+    enabled: true
+
+- name: Upload configs
+  ansible.builtin.template:
+    src: "etc/uwsgi/apps-available/config.ini.j2"
+    dest: "/etc/uwsgi/apps-available/{{ django_uwsgi_nginx__project_name }}.ini"
+    mode: "0644"
+
+- name: Enable configs
+  ansible.builtin.file:
+    src: "/etc/uwsgi/apps-available/{{ django_uwsgi_nginx__project_name }}.ini"
+    dest: "/etc/uwsgi/apps-enabled/{{ django_uwsgi_nginx__project_name }}.ini"
+    state: link
+  notify: Restart uwsgi

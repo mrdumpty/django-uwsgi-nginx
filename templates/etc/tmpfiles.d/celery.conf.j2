@@ -1,0 +1,3 @@
+# {{ ansible_managed }}
+d /run/celery 0755 {{ django_uwsgi_nginx__celery_user }} {{ django_uwsgi_nginx__celery_group }} -
+d /var/log/celery 0755 {{ django_uwsgi_nginx__celery_user }} {{ django_uwsgi_nginx__celery_group }} -

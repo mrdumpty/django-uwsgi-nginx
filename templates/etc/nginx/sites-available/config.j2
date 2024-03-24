@@ -1,0 +1,49 @@
+# {{ ansible_managed }}
+upstream {{ django_uwsgi_nginx__project_name }} {
+    server unix:/run/uwsgi/app/{{ django_uwsgi_nginx__project_name }}/socket;
+}
+
+server {
+    listen {{ django_uwsgi_nginx__http_listen }};
+    server_name {% for domain in django_uwsgi_nginx__project_domains %} {{ domain }} {% endfor %};
+
+    access_log /var/log/nginx/{{ django_uwsgi_nginx__project_name }}_access.log proxied;
+    error_log /var/log/nginx/{{ django_uwsgi_nginx__project_name }}_error.log;
+
+    client_max_body_size 20M;
+
+    location /{{ django_uwsgi_nginx__static_url }}/ {
+        alias {{ django_uwsgi_nginx__static_dir }}/;
+    }
+    
+    location /{{ django_uwsgi_nginx__media_url }}/ {
+        alias {{ django_uwsgi_nginx__media_dir }}/;
+    }
+
+    location /favicon.ico {
+        alias {{ django_uwsgi_nginx__static_dir }}/favicons/favicon.ico;
+    }
+
+    location /robots.txt {
+        alias {{ django_uwsgi_nginx__static_dir }}/robots.txt;
+    }
+    
+    location /ads.txt {
+        alias {{ django_uwsgi_nginx__static_dir }}/ads.txt;
+    }
+
+    location /sitemap.xml {
+        alias {{ django_uwsgi_nginx__precompiled_dir }}/sitemap.xml;
+    }
+
+    location /basic_status {
+        stub_status;
+        allow {{ django_uwsgi_nginx__monitoring_server }};
+        deny all;
+    }
+
+    location / {
+        include uwsgi_params;
+        uwsgi_pass {{ django_uwsgi_nginx__project_name }};
+    }
+}

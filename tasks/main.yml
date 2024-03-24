@@ -1,0 +1,46 @@
+---
+# code: language=ansible
+
+- name: Get timestamp from the system
+  ansible.builtin.command: "date +%Y-%m-%d-%H-%M-%S"
+  register: tstamp
+  changed_when: false
+
+- name: Set basic variables
+  ansible.builtin.set_fact:
+    django_uwsgi_nginx__deploy_dir: "{{ django_uwsgi_nginx__deploy_root }}/{{ django_uwsgi_nginx__project_name }}/src"
+    django_uwsgi_nginx__static_dir: "{{ django_uwsgi_nginx__static_root }}/{{ django_uwsgi_nginx__project_name }}/{{ django_uwsgi_nginx__static_url }}"
+    django_uwsgi_nginx__media_dir: "{{ django_uwsgi_nginx__static_root }}/{{ django_uwsgi_nginx__project_name }}/{{ django_uwsgi_nginx__media_url }}"
+    django_uwsgi_nginx__precompiled_dir: >-
+                                    {{ django_uwsgi_nginx__static_root }}/{{ django_uwsgi_nginx__project_name }}/{{ django_uwsgi_nginx__precompiled_subdir }}
+    django_uwsgi_nginx__database_backup_path: "{{ django_uwsgi_nginx__database_backup_dir }}/{{ django_uwsgi_nginx__database_name }}-{{ tstamp.stdout }}.sql"
+
+- name: Backup database
+  ansible.builtin.include_tasks: backup_db.yml
+  tags:
+    - db
+  when: django_uwsgi_nginx__database_backup
+
+
+- name: Install application
+  ansible.builtin.include_tasks: install_app.yml
+  tags:
+    - app
+
+- name: Install celery
+  ansible.builtin.include_tasks: celery.yml
+  tags:
+    - app
+    - celery
+
+- name: Install uwsgi
+  ansible.builtin.include_tasks: uwsgi.yml
+  tags:
+    - uwsgi
+
+- name: Install nginx
+  ansible.builtin.include_tasks: nginx.yml
+  tags:
+    - nginx
+
+# tasks file for django-uwsgi-nginx

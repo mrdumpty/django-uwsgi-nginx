@@ -1,0 +1,109 @@
+---
+# code: language=ansible
+
+- name: Install necessary packages
+  ansible.builtin.apt:
+    pkg:
+      - build-essential
+      - git
+      - libpq-dev
+      - python3-dev
+      - python3-venv
+      - python3-setuptools
+      - python3-wheel
+    update_cache: true
+
+- name: Ensure a russian locale exists
+  community.general.locale_gen:
+    name: ru_RU.UTF-8
+    state: present
+
+- name: Upload application code
+  ansible.builtin.git:
+    repo: "{{ django_uwsgi_nginx__code_git_repo }}"
+    dest: "/tmp/app"
+    version: "{{ django_uwsgi_nginx__code_version }}"
+    single_branch: true
+
+- name: Clean deploy directory
+  ansible.builtin.file:
+    path: "{{ django_uwsgi_nginx__deploy_dir }}"
+    state: absent
+
+- name: Create deploy directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: www-data
+    group: www-data
+    recurse: true
+    mode: "0755"
+  with_items:
+    - "{{ django_uwsgi_nginx__deploy_dir }}"
+    - "{{ django_uwsgi_nginx__static_dir }}"
+    - "{{ django_uwsgi_nginx__media_dir }}"
+
+- name: Copy project files
+  ansible.builtin.copy:
+    src: /tmp/app/
+    dest: "{{ django_uwsgi_nginx__deploy_dir }}"
+    remote_src: true
+    owner: "www-data"
+    group: "www-data"
+    mode: "u=rwX,g=rX,o=rX"
+
+- name: Copy production config
+  ansible.builtin.copy:
+    src: "{{ django_uwsgi_nginx__deploy_dir }}/{{ django_uwsgi_nginx__project_name }}/{{ django_uwsgi_nginx__settings_file }}"
+    dest: "{{ django_uwsgi_nginx__deploy_dir }}/{{ django_uwsgi_nginx__project_name }}/settings.py"
+    mode: "0644"
+    remote_src: true
+
+- name: Install requirements
+  ansible.builtin.pip:
+    requirements: "{{ django_uwsgi_nginx__deploy_dir }}/requirements.txt"
+    virtualenv: "{{ django_uwsgi_nginx__deploy_dir }}/virtualenv"
+    virtualenv_command: "python3 -m venv"
+
+- name: Set appropriate file permissions
+  ansible.builtin.file:
+    dest: "{{ django_uwsgi_nginx__deploy_dir }}"
+    owner: "www-data"
+    group: "www-data"
+    mode: "u=rwX,g=rX,o=rX"
+    recurse: true
+
+- name: Upload media
+  when: django_uwsgi_nginx__upload_media_from
+  ansible.builtin.unarchive:
+    src: "{{ django_uwsgi_nginx__upload_media_from }}"
+    dest: "{{ django_uwsgi_nginx__media_dir }}"
+    owner: "www-data"
+    group: "www-data"
+
+- name: Run migrations
+  community.general.django_manage:
+    app_path: "{{ django_uwsgi_nginx__deploy_dir }}"
+    command: migrate
+    virtualenv: "{{ django_uwsgi_nginx__deploy_dir }}/virtualenv"
+
+- name: Run collectstatic
+  community.general.django_manage:
+    app_path: "{{ django_uwsgi_nginx__deploy_dir }}"
+    command: collectstatic
+    virtualenv: "{{ django_uwsgi_nginx__deploy_dir }}/virtualenv"
+
+- name: Trigger services reloading nginx and uwsgi
+  ansible.builtin.command: echo "This task will restart uwsgi and reload nginx services"
+  notify:
+    - Restart uwsgi
+    - Restart nginx
+    - Restart celery
+  changed_when: true
+
+- name: Clean up
+  ansible.builtin.file:
+    path: /tmp/app
+    state: absent
+
+# tasks file for django-uwsgi-nginx

@@ -1,0 +1,57 @@
+---
+# code: language=ansible
+
+- name: Create celery group
+  ansible.builtin.group:
+    name: "{{ django_uwsgi_nginx__celery_group }}"
+    state: present
+
+- name: Create celery user
+  ansible.builtin.user:
+    name: "{{ django_uwsgi_nginx__celery_user }}"
+    group: "{{ django_uwsgi_nginx__celery_group }}"
+    state: present
+    home: "{{ django_uwsgi_nginx__deploy_dir }}"
+    shell: /usr/sbin/nologin
+
+- name: Be sure all dirs are exist
+  ansible.builtin.file:
+    name: "{{ item }}"
+    state: directory
+    mode: '0755'
+    owner: "{{ django_uwsgi_nginx__celery_user }}"
+    group: "{{ django_uwsgi_nginx__celery_group }}"
+  loop:
+    - "/run/celery"
+    - "/var/log/celery"
+    - "{{ django_uwsgi_nginx__precompiled_dir }}"
+
+- name: Copy files
+  ansible.builtin.template:
+    src: "{{ item }}.j2"
+    dest: "/{{ item }}"
+    mode: "0644"
+  loop:
+    - "etc/default/celery"
+    - "etc/tmpfiles.d/celery.conf"
+    - "etc/systemd/system/celery.service"
+    - "etc/systemd/system/celerybeat.service"
+  register: celery_config
+  notify: Restart celery
+
+- name: Set up logrotate
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "/{{ item }}"
+    mode: "0644"
+  loop:
+    - "etc/logrotate.d/celery"
+
+- name: Start and enable celery service
+  ansible.builtin.service:
+    name: "{{ item }}"
+    state: started
+    enabled: true
+  loop:
+    - celery
+    - celerybeat

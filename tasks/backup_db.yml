@@ -1,0 +1,25 @@
+---
+# code: language=ansible
+
+- name: Install necessary packages
+  ansible.builtin.apt:
+    name:
+      - python3-psycopg2
+    update_cache: true
+
+- name: Create a backup directory
+  ansible.builtin.file:
+    path: "{{ django_uwsgi_nginx__database_backup_dir }}"
+    mode: "0777"
+    owner: root
+    state: directory
+
+- name: "Dump an existing database to a file"
+  community.postgresql.postgresql_db:
+    login_host: "{{ django_uwsgi_nginx__database_server }}"
+    port: "{{ django_uwsgi_nginx__database_port }}"
+    login_user: "{{ django_uwsgi_nginx__database_login }}"
+    login_password: "{{ django_uwsgi_nginx__database_password }}"
+    name: "{{ django_uwsgi_nginx__database_name }}"
+    state: dump
+    target: "{{ django_uwsgi_nginx__database_backup_path }}"

@@ -1,0 +1,12 @@
+# {{ ansible_managed }}
+[uwsgi]
+project = {{ django_uwsgi_nginx__project_name }}
+
+plugin = python3
+
+chdir = {{ django_uwsgi_nginx__deploy_dir }}
+module = {{ django_uwsgi_nginx__project_name }}.wsgi:application
+virtualenv = {{ django_uwsgi_nginx__deploy_dir }}/virtualenv
+
+master = true
+processes = 2

@@ -1,0 +1,17 @@
+---
+galaxy_info:
+  namespace: zombiehost
+  role_name: django_uwsgi_nginx
+  author: Kirill I. Shatalaev
+  description: Install and configure django app to server
+  company: zombiehost.net
+  license: WTFPL
+
+  min_ansible_version: "2.1"
+
+  platforms:
+    - name: Ubuntu
+      versions:
+        - all
+
+dependencies: []

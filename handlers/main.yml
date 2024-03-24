@@ -1,0 +1,22 @@
+---
+# code: language=ansible
+
+- name: Restart nginx
+  ansible.builtin.service:
+    name: nginx
+    state: restarted
+
+- name: Restart uwsgi
+  ansible.builtin.service:
+    name: uwsgi
+    state: restarted
+
+- name: Restart celery
+  ansible.builtin.service:
+    name: "{{ item }}"
+    state: restarted
+  loop:
+    - celery
+    - celerybeat
+
+# handlers file for django-uwsgi-nginx

@@ -1,0 +1,36 @@
+---
+# code: language=ansible
+
+- name: Install nginx
+  ansible.builtin.apt:
+    package: "nginx"
+    state: present
+    update_cache: true
+
+- name: Modify main config
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "/{{ item }}"
+    mode: "0644"
+  with_items:
+    - "etc/nginx/nginx.conf"
+  notify: Restart nginx
+
+- name: Running and enabled nginx service
+  ansible.builtin.service:
+    name: nginx
+    state: started
+    enabled: true
+
+- name: Upload configs
+  ansible.builtin.template:
+    src: "etc/nginx/sites-available/config.j2"
+    dest: "/etc/nginx/sites-available/{{ django_uwsgi_nginx__project_name }}"
+    mode: "0644"
+
+- name: Enable configs
+  ansible.builtin.file:
+    src: "/etc/nginx/sites-available/{{ django_uwsgi_nginx__project_name }}"
+    dest: "/etc/nginx/sites-enabled/{{ django_uwsgi_nginx__project_name }}"
+    state: link
+  notify: Restart nginx

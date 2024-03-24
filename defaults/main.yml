@@ -1,0 +1,27 @@
+---
+# code language=ansible
+
+django_uwsgi_nginx__code_git_repo: "https://github.com/example-django-app.git"
+django_uwsgi_nginx__code_version: master
+django_uwsgi_nginx__project_name: "django_app"
+django_uwsgi_nginx__deploy_root: "/opt"
+django_uwsgi_nginx__static_root: "/var/www/html"
+django_uwsgi_nginx__static_url: "static"
+django_uwsgi_nginx__media_url: "media"
+django_uwsgi_nginx__precompiled_subdir: "precompiled"
+django_uwsgi_nginx__monitoring_server: 127.0.0.1
+django_uwsgi_nginx__http_listen: 80
+django_uwsgi_nginx__settings_file: "settings_prod.py"
+django_uwsgi_nginx__project_domains:
+  - "example.com"
+  - "www.example.com"
+django_uwsgi_nginx__database_server: "127.0.0.1"
+django_uwsgi_nginx__database_port: 5432
+django_uwsgi_nginx__database_login: "login"
+django_uwsgi_nginx__database_password: "password"
+django_uwsgi_nginx__database_name: "django"
+django_uwsgi_nginx__database_backup: true
+django_uwsgi_nginx__database_backup_dir: "/srv/backups"
+django_uwsgi_nginx__celery_user: "celery"
+django_uwsgi_nginx__celery_group: "celery"
+django_uwsgi_nginx__upload_media_from:
